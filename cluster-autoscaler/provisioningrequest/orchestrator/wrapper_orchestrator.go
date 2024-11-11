@@ -19,7 +19,7 @@ package orchestrator
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
-	"k8s.io/autoscaler/cluster-autoscaler/apis/provisioningrequest/autoscaling.x-k8s.io/v1"
+	v1 "k8s.io/autoscaler/cluster-autoscaler/apis/provisioningrequest/autoscaling.x-k8s.io/v1"
 	"k8s.io/autoscaler/cluster-autoscaler/clusterstate"
 	"k8s.io/autoscaler/cluster-autoscaler/context"
 	"k8s.io/autoscaler/cluster-autoscaler/core/scaleup"
@@ -105,4 +105,14 @@ func (o *WrapperOrchestrator) ScaleUpToNodeGroupMinSize(
 	nodeInfos map[string]*schedulerframework.NodeInfo,
 ) (*status.ScaleUpStatus, errors.AutoscalerError) {
 	return o.podsOrchestrator.ScaleUpToNodeGroupMinSize(nodes, nodeInfos)
+}
+
+// ScaleUpToOptimizeCost tries to scale up node groups to optimize cost.
+func (o *WrapperOrchestrator) ScaleUpToOptimizeCost(
+	nodes []*apiv1.Node,
+	daemonSets []*appsv1.DaemonSet,
+	nodeInfos map[string]*schedulerframework.NodeInfo,
+	allOrNothing bool,
+) (*status.ScaleUpStatus, errors.AutoscalerError) {
+	return o.podsOrchestrator.ScaleUpToOptimizeCost(nodes, daemonSets, nodeInfos, allOrNothing)
 }

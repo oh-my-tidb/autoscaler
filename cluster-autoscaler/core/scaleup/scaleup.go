@@ -58,4 +58,12 @@ type Orchestrator interface {
 		nodes []*apiv1.Node,
 		nodeInfos map[string]*schedulerframework.NodeInfo,
 	) (*status.ScaleUpStatus, errors.AutoscalerError)
+	// ScaleUpToOptimizeCost tries to scale up the cluster to optimize cost. Returns
+	// appropriate status or error if an unexpected error occurred.
+	ScaleUpToOptimizeCost(
+		nodes []*apiv1.Node,
+		daemonSets []*appsv1.DaemonSet,
+		nodeInfos map[string]*schedulerframework.NodeInfo,
+		allOrNothing bool,
+	) (*status.ScaleUpStatus, errors.AutoscalerError)
 }

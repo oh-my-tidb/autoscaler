@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
-	"k8s.io/autoscaler/cluster-autoscaler/apis/provisioningrequest/autoscaling.x-k8s.io/v1"
+	v1 "k8s.io/autoscaler/cluster-autoscaler/apis/provisioningrequest/autoscaling.x-k8s.io/v1"
 	"k8s.io/autoscaler/cluster-autoscaler/clusterstate"
 	"k8s.io/autoscaler/cluster-autoscaler/context"
 	"k8s.io/autoscaler/cluster-autoscaler/estimator"
@@ -88,6 +88,15 @@ func (f *fakeScaleUp) Initialize(
 func (f *fakeScaleUp) ScaleUpToNodeGroupMinSize(
 	nodes []*apiv1.Node,
 	nodeInfos map[string]*schedulerframework.NodeInfo,
+) (*status.ScaleUpStatus, errors.AutoscalerError) {
+	return nil, nil
+}
+
+func (f *fakeScaleUp) ScaleUpToOptimizeCost(
+	nodes []*apiv1.Node,
+	daemonSets []*appsv1.DaemonSet,
+	nodeInfos map[string]*schedulerframework.NodeInfo,
+	allOrNothing bool,
 ) (*status.ScaleUpStatus, errors.AutoscalerError) {
 	return nil, nil
 }

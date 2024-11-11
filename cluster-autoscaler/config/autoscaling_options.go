@@ -183,6 +183,10 @@ type AutoscalingOptions struct {
 	// ScaleDownSimulationTimeout defines the maximum time that can be
 	// spent on scale down simulation.
 	ScaleDownSimulationTimeout time.Duration
+	// CostOptimizationEnabled is used to allow CA to optimize cost of node groups.
+	CostOptimizationEnabled bool
+	// RedundantNodeGroupAllocationCount defines the number of node groups to allocate redundantly during scale-up to ensure successful allocation.
+	RedundantNodeGroupAllocationCount int
 	// SchedulerConfig allows changing configuration of in-tree
 	// scheduler plugins acting on PreFilter and Filter extension points
 	SchedulerConfig *scheduler_config.KubeSchedulerConfiguration

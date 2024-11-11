@@ -27,6 +27,7 @@ import (
 	"k8s.io/autoscaler/cluster-autoscaler/processors/status"
 	"k8s.io/autoscaler/cluster-autoscaler/provisioningrequest/provreqclient"
 	"k8s.io/autoscaler/cluster-autoscaler/simulator/scheduling"
+	"k8s.io/autoscaler/cluster-autoscaler/utils/errors"
 	ca_errors "k8s.io/autoscaler/cluster-autoscaler/utils/errors"
 	"k8s.io/autoscaler/cluster-autoscaler/utils/taints"
 
@@ -107,5 +108,15 @@ func (o *provReqOrchestrator) ScaleUpToNodeGroupMinSize(
 	nodes []*apiv1.Node,
 	nodeInfos map[string]*schedulerframework.NodeInfo,
 ) (*status.ScaleUpStatus, ca_errors.AutoscalerError) {
+	return nil, nil
+}
+
+// ScaleUpToOptimizeCost doesn't have implementation for ProvisioningRequest Orchestrator.
+func (o *provReqOrchestrator) ScaleUpToOptimizeCost(
+	nodes []*apiv1.Node,
+	daemonSets []*appsv1.DaemonSet,
+	nodeInfos map[string]*schedulerframework.NodeInfo,
+	allOrNothing bool,
+) (*status.ScaleUpStatus, errors.AutoscalerError) {
 	return nil, nil
 }
