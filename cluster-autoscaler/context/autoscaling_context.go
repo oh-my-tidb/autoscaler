@@ -51,6 +51,8 @@ type AutoscalingContext struct {
 	ClusterSnapshot clustersnapshot.ClusterSnapshot
 	// ExpanderStrategy is the strategy used to choose which node group to expand when scaling up
 	ExpanderStrategy expander.Strategy
+	// AlternativeSelector is the interface for selecting node groups based on user-defined alternatives
+	AlternativeSelector expander.AlternativeSelector
 	// ProcessorCallbacks is interface defining extra callback methods which can be called by processors used in extension points.
 	ProcessorCallbacks processor_callbacks.ProcessorCallbacks
 	// DebuggingSnapshotter is the interface for capturing the debugging snapshot
@@ -103,6 +105,7 @@ func NewAutoscalingContext(
 	autoscalingKubeClients *AutoscalingKubeClients,
 	cloudProvider cloudprovider.CloudProvider,
 	expanderStrategy expander.Strategy,
+	alternativeSelector expander.AlternativeSelector,
 	processorCallbacks processor_callbacks.ProcessorCallbacks,
 	debuggingSnapshotter debuggingsnapshot.DebuggingSnapshotter,
 	remainingPdbTracker pdb.RemainingPdbTracker,
@@ -115,6 +118,7 @@ func NewAutoscalingContext(
 		PredicateChecker:       predicateChecker,
 		ClusterSnapshot:        clusterSnapshot,
 		ExpanderStrategy:       expanderStrategy,
+		AlternativeSelector:    alternativeSelector,
 		ProcessorCallbacks:     processorCallbacks,
 		DebuggingSnapshotter:   debuggingSnapshotter,
 		RemainingPdbTracker:    remainingPdbTracker,

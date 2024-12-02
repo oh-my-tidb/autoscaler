@@ -60,3 +60,8 @@ type Strategy interface {
 type Filter interface {
 	BestOptions(options []Option, nodeInfo map[string]*schedulerframework.NodeInfo) []Option
 }
+
+// AlternativeSelector describes an interface for selecting alternative options when scaling up.
+type AlternativeSelector interface {
+	GetAlternativeOptions(options []Option, best *Option) []Option
+}

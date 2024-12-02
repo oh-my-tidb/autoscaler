@@ -29,6 +29,7 @@ import (
 	"k8s.io/autoscaler/cluster-autoscaler/debuggingsnapshot"
 	"k8s.io/autoscaler/cluster-autoscaler/estimator"
 	"k8s.io/autoscaler/cluster-autoscaler/expander"
+	"k8s.io/autoscaler/cluster-autoscaler/expander/alternatives"
 	"k8s.io/autoscaler/cluster-autoscaler/expander/factory"
 	"k8s.io/autoscaler/cluster-autoscaler/observers/loopstart"
 	ca_processors "k8s.io/autoscaler/cluster-autoscaler/processors"
@@ -38,6 +39,7 @@ import (
 	"k8s.io/autoscaler/cluster-autoscaler/simulator/predicatechecker"
 	"k8s.io/autoscaler/cluster-autoscaler/utils/backoff"
 	"k8s.io/autoscaler/cluster-autoscaler/utils/errors"
+	"k8s.io/autoscaler/cluster-autoscaler/utils/kubernetes"
 	"k8s.io/client-go/informers"
 	kube_client "k8s.io/client-go/kubernetes"
 )
@@ -52,6 +54,7 @@ type AutoscalerOptions struct {
 	PredicateChecker       predicatechecker.PredicateChecker
 	ClusterSnapshot        clustersnapshot.ClusterSnapshot
 	ExpanderStrategy       expander.Strategy
+	AlternativeSelector    expander.AlternativeSelector
 	EstimatorBuilder       estimator.EstimatorBuilder
 	Processors             *ca_processors.AutoscalingProcessors
 	LoopStartNotifier      *loopstart.ObserversList
@@ -93,6 +96,7 @@ func NewAutoscaler(opts AutoscalerOptions, informerFactory informers.SharedInfor
 		opts.LoopStartNotifier,
 		opts.CloudProvider,
 		opts.ExpanderStrategy,
+		opts.AlternativeSelector,
 		opts.EstimatorBuilder,
 		opts.Backoff,
 		opts.DebuggingSnapshotter,
@@ -131,6 +135,13 @@ func initializeDefaultOptions(opts *AutoscalerOptions, informerFactory informers
 			return err
 		}
 		opts.ExpanderStrategy = expanderStrategy
+	}
+	if opts.AlternativeSelector == nil {
+		// It seems other listers do the same here - they never receive the termination msg on the ch.
+		// This should be currently OK.
+		stopChannel := make(chan struct{})
+		lister := kubernetes.NewConfigMapListerForNamespace(opts.KubeClient, stopChannel, opts.ConfigNamespace)
+		opts.AlternativeSelector = alternatives.NewSelector(lister.ConfigMaps(opts.ConfigNamespace), opts.AutoscalingKubeClients.Recorder)
 	}
 	if opts.EstimatorBuilder == nil {
 		thresholds := []estimator.Threshold{
