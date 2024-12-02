@@ -64,4 +64,5 @@ type Filter interface {
 // AlternativeSelector describes an interface for selecting alternative options when scaling up.
 type AlternativeSelector interface {
 	GetAlternativeOptions(options []Option, best *Option) []Option
+	GetAlternativeNodeGroups(nodeGroup string) []string
 }

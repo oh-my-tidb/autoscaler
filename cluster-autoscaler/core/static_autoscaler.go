@@ -563,6 +563,11 @@ func (a *StaticAutoscaler) RunOnce(currentTime time.Time) caerrors.AutoscalerErr
 		}
 	}
 
+	if a.CostOptimizationEnabled {
+		scaleUpStatus, typedErr = a.scaleUpOrchestrator.ScaleUpToOptimizeCost(readyNodes, daemonsets, nodeInfosForGroups, false)
+		klog.V(1).Info("Cost optimization", scaleUpStatus, typedErr)
+	}
+
 	if a.ScaleDownEnabled {
 		unneededStart := time.Now()
 
@@ -668,11 +673,6 @@ func (a *StaticAutoscaler) RunOnce(currentTime time.Time) caerrors.AutoscalerErr
 				return typedErr
 			}
 		}
-	}
-
-	if a.CostOptimizationEnabled {
-		scaleUpStatus, typedErr = a.scaleUpOrchestrator.ScaleUpToOptimizeCost(readyNodes, daemonsets, nodeInfosForGroups, false)
-		klog.V(1).Info("Cost optimization", scaleUpStatus, typedErr)
 	}
 
 	if a.EnforceNodeGroupMinSize {

@@ -110,3 +110,12 @@ func (as *alternativeSelector) GetAlternativeOptions(options []expander.Option, 
 
 	return opts
 }
+
+func (as *alternativeSelector) GetAlternativeNodeGroups(nodeGroup string) []string {
+	alternatives, _, err := as.reloadConfigMap()
+	if err != nil {
+		return nil
+	}
+
+	return alternatives[nodeGroup]
+}
