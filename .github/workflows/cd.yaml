@@ -1,4 +1,4 @@
-name: CD
+name: CD Dev Pipeline
 
 on:
   push:
@@ -6,77 +6,58 @@ on:
       - cse
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.ref }}-${{ github.workflow }}
-  cancel-in-progress: true
-
 jobs:
-  build-arm64:
-    name: Build ARM64 Image
-    runs-on: arm64
+  build-push-image:
+    name: Build Image & Push To ECR
+    runs-on: self-hosted
+    outputs:
+      image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
     env:
-      GITHUB_TOKEN: ${{ secrets.GIT_ACTION_BOT }}
+      ECR_REPO: dbaas/nightly/cluster-autoscaler
+      AWS_ROLE_ARN: ${{ secrets.DBAAS_DEV_AWS_ROLE }}
+      AWS_REGION: us-east-1
     steps:
-      - name: Check out Code
-        uses: actions/checkout@v2
-      - name: Login to Harbor
-        uses: docker/login-action@v3
+      - name: check out code
+        uses: actions/checkout@v4
+
+      - name: setup QEMU
+        uses: docker/setup-qemu-action@v1
         with:
-          registry: hub.pingcap.net
-          username: ${{ secrets.HARBOR_USER }}
-          password: ${{ secrets.HARBOR_TOKEN }}
-      - name: Build and Push Images
-        uses: docker/build-push-action@v2
+          image: "gcr.io/pingcap-public/third-party/tonistiigi/binfmt:qemu-v6.2.0"
+
+      - name: set up Docker-Context
+        run: |
+          docker --context tls-env info || docker context create tls-env
+
+      - name: setup Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          endpoint: tls-env
+          driver-opts: |
+            image=gcr.io/pingcap-public/third-party/moby/buildkit:buildx-stable-1
+
+      - name: install AWS-Cli
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+
+      - name: login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: make sure the image repos exist
+        run: |
+          aws ecr describe-repositories --repository-names ${{ env.ECR_REPO }} || aws ecr create-repository --repository-name ${{ env.ECR_REPO }} || exit 1
+
+      - name: build and push latest images
+        uses: docker/build-push-action@v6
         with:
           context: ./cluster-autoscaler
-          platforms: "linux/arm64"
+          platforms: linux/amd64,linux/arm64
           push: true
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GIT_ACTION_BOT }}
           build-args: |
             GITHUB_TOKEN=${{ secrets.GIT_ACTION_BOT }}
-          tags: hub.pingcap.net/sunxiaoguang/serverless/cluster-autoscaler:${{ github.sha }}-arm64
-  build-amd64:
-    name: Build AMD64 Image
-    runs-on: amd64
-    env:
-      GITHUB_TOKEN: ${{ secrets.GIT_ACTION_BOT }}
-    steps:
-      - name: Check out Code
-        uses: actions/checkout@v2
-      - name: Login to Harbor
-        uses: docker/login-action@v3
-        with:
-          registry: hub.pingcap.net
-          username: ${{ secrets.HARBOR_USER }}
-          password: ${{ secrets.HARBOR_TOKEN }}
-      - name: Build and Push Images
-        uses: docker/build-push-action@v2
-        with:
-          context: ./cluster-autoscaler
-          platforms: "linux/amd64"
-          push: true
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GIT_ACTION_BOT }}
-          build-args: |
-            GITHUB_TOKEN=${{ secrets.GIT_ACTION_BOT }}
-          tags: hub.pingcap.net/sunxiaoguang/serverless/cluster-autoscaler:${{ github.sha }}-amd64
-  multi-arch:
-    name: Create Multi-Architecture Image
-    runs-on: amd64
-    needs: ["build-arm64", "build-amd64"]
-    steps:
-      - name: Login to Harbor
-        uses: docker/login-action@v3
-        with:
-          registry: hub.pingcap.net
-          username: ${{ secrets.HARBOR_USER }}
-          password: ${{ secrets.HARBOR_TOKEN }}
-      - name: create-manifest
-        run: |
-          docker manifest create hub.pingcap.net/sunxiaoguang/serverless/cluster-autoscaler:${{ github.sha }} \
-          --amend hub.pingcap.net/sunxiaoguang/serverless/cluster-autoscaler:${{ github.sha }}-amd64 \
-          --amend hub.pingcap.net/sunxiaoguang/serverless/cluster-autoscaler:${{ github.sha }}-arm64
-      - name: push-manifest
-        run: |
-          docker manifest push hub.pingcap.net/sunxiaoguang/serverless/cluster-autoscaler:${{ github.sha }}
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
